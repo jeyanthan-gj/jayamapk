@@ -152,8 +152,16 @@ class _SmartphonesScreenState extends State<SmartphonesScreen> {
     if (confirm != true) return;
 
     try {
-      final relModels = await _supabase.from('models').select('image_url').eq('brand_id', brand['id']);
-      for (final m in relModels) { await _deleteImageFromStorage(m['image_url']); }
+      final relModels = await _supabase.from('models').select('id, image_url').eq('brand_id', brand['id']);
+      for (final m in relModels) {
+        final variants = await _supabase.from('variants').select('image_url').eq('model_id', m['id']);
+        for (final v in variants) {
+          if (v['image_url'] != null) await _deleteImageFromStorage(v['image_url']);
+        }
+        await _supabase.from('variants').delete().eq('model_id', m['id']);
+        if (m['image_url'] != null) await _deleteImageFromStorage(m['image_url']);
+        await _supabase.from('models').delete().eq('id', m['id']);
+      }
       await _deleteImageFromStorage(brand['logo_url']);
       await _supabase.from('brands').delete().eq('id', brand['id']);
       _fetchData();
@@ -287,6 +295,11 @@ class _SmartphonesScreenState extends State<SmartphonesScreen> {
     ));
     if (confirm != true) return;
     try {
+      final variants = await _supabase.from('variants').select('image_url').eq('model_id', model['id']);
+      for (final v in variants) {
+        if (v['image_url'] != null) await _deleteImageFromStorage(v['image_url']);
+      }
+      await _supabase.from('variants').delete().eq('model_id', model['id']);
       await _deleteImageFromStorage(model['image_url']);
       await _supabase.from('models').delete().eq('id', model['id']);
       _fetchData();

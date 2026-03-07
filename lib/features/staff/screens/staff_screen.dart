@@ -159,10 +159,9 @@ class _StaffScreenState extends State<StaffScreen> {
 
     setState(() => _loading = true);
     try {
-      await Future.wait([
-        _supabase.from('staff').delete().eq('id', id),
-        _supabase.from('users').delete().eq('username', mobile),
-      ]);
+      await _supabase.from('attendance').delete().eq('staff_id', id);
+      await _supabase.from('staff').delete().eq('id', id);
+      await _supabase.from('users').delete().eq('username', mobile);
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Staff deleted'), backgroundColor: Colors.red));
       _fetchData();
     } catch (e) {
