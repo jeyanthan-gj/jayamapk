@@ -141,12 +141,12 @@ class _SmartphonesScreenState extends State<SmartphonesScreen> {
   }
 
   Future<void> _handleDeleteBrand(Map<String, dynamic> brand) async {
-    final confirm = await showDialog<bool>(context: context, builder: (_) => AlertDialog(
+    final confirm = await showDialog<bool>(context: context, builder: (ctx) => AlertDialog(
       title: Text('Delete ${brand['name']}?'),
       content: const Text('This will also delete all related models.'),
       actions: [
-        TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
-        TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('Delete', style: TextStyle(color: Colors.red))),
+        TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+        TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Delete', style: TextStyle(color: Colors.red))),
       ],
     ));
     if (confirm != true) return;
@@ -286,11 +286,11 @@ class _SmartphonesScreenState extends State<SmartphonesScreen> {
   }
 
   Future<void> _handleDeleteModel(Map<String, dynamic> model) async {
-    final confirm = await showDialog<bool>(context: context, builder: (_) => AlertDialog(
+    final confirm = await showDialog<bool>(context: context, builder: (ctx) => AlertDialog(
       title: Text('Delete ${model['name']}?'),
       actions: [
-        TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
-        TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('Delete', style: TextStyle(color: Colors.red))),
+        TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+        TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Delete', style: TextStyle(color: Colors.red))),
       ],
     ));
     if (confirm != true) return;
@@ -598,11 +598,13 @@ class _SmartphonesScreenState extends State<SmartphonesScreen> {
             if (isAdmin)
               Positioned(top: 8, right: 8, child: Row(mainAxisSize: MainAxisSize.min, children: [
                 GestureDetector(
+                  behavior: HitTestBehavior.opaque,
                   onTap: () => _openModelDialog(model),
                   child: Container(padding: const EdgeInsets.all(8), decoration: BoxDecoration(color: Theme.of(context).colorScheme.surface.withOpacity(0.9), borderRadius: BorderRadius.circular(10), border: Border.all(color: Theme.of(context).dividerColor)), child: const Icon(LucideIcons.edit, size: 14)),
                 ),
                 const SizedBox(width: 4),
                 GestureDetector(
+                  behavior: HitTestBehavior.opaque,
                   onTap: () => _handleDeleteModel(model),
                   child: Container(padding: const EdgeInsets.all(8), decoration: BoxDecoration(color: Theme.of(context).colorScheme.surface.withOpacity(0.9), borderRadius: BorderRadius.circular(10), border: Border.all(color: Theme.of(context).dividerColor)), child: const Icon(LucideIcons.trash2, size: 14, color: Colors.red)),
                 ),
