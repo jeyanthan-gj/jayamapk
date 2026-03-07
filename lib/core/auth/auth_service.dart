@@ -102,7 +102,10 @@ class AuthService extends ChangeNotifier {
       return null; // Return null on success
     } catch (e) {
       debugPrint('Sign in error: $e');
-      return 'An unexpected error occurred';
+      if (e is PostgrestException) {
+        return 'Server Error: ${e.message}';
+      }
+      return 'Error: ${e.toString()}';
     }
   }
 
