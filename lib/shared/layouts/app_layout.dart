@@ -17,7 +17,10 @@ class AppLayout extends StatelessWidget {
     final themeProvider = context.watch<ThemeProvider>();
     final user = authService.user;
     final isAdmin = authService.isAdmin;
-    final currentPath = GoRouterState.of(context).uri.path;
+    String currentPath = '/';
+    try {
+      currentPath = GoRouterState.of(context).uri.path;
+    } catch (_) {}
     final isDark = themeProvider.isDark;
     final screenWidth = MediaQuery.of(context).size.width;
     final showPermanentSidebar = screenWidth >= 768;

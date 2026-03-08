@@ -25,8 +25,8 @@ class UserProfile {
   factory UserProfile.fromJson(Map<String, dynamic> json) {
     return UserProfile(
       id: json['id'] is String ? json['id'] : json['id'].toString(),
-      username: json['username'],
-      name: json['name'],
+      username: json['username'] ?? '',
+      name: json['name'] ?? 'Unknown',
       role: json['role'] ?? 'staff',
       birthday: json['birthday'],
       avatarUrl: json['avatar_url'],
@@ -48,6 +48,9 @@ class UserProfile {
 }
 
 class AuthService extends ChangeNotifier {
+  static final AuthService _instance = AuthService._internal();
+  static AuthService get instance => _instance;
+
   UserProfile? _user;
   bool _loading = true;
 
@@ -57,9 +60,12 @@ class AuthService extends ChangeNotifier {
 
   final SupabaseClient _supabase = Supabase.instance.client;
 
-  AuthService() {
+  AuthService._internal() {
     _loadUser();
   }
+
+  // Backwards compatibility for Provider
+  factory AuthService() => _instance;
 
   Future<void> _loadUser() async {
     try {

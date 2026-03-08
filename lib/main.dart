@@ -37,15 +37,24 @@ void main() async {
 
 final _router = GoRouter(
   initialLocation: '/login',
+  refreshListenable: AuthService.instance,
+  redirect: (context, state) {
+    final authService = AuthService.instance;
+    final loggingIn = state.uri.path == '/login';
+
+    if (authService.loading) return null;
+    if (authService.user == null) return loggingIn ? null : '/login';
+    if (loggingIn) return '/';
+
+    return null;
+  },
   routes: [
     GoRoute(
       path: '/login',
       builder: (context, state) => const LoginScreen(),
     ),
     ShellRoute(
-      builder: (context, state, child) {
-        return _buildProtectedRoute(context, AppLayout(child: child));
-      },
+      builder: (context, state, child) => AppLayout(child: child),
       routes: [
         GoRoute(
           path: '/',
@@ -84,25 +93,6 @@ final _router = GoRouter(
     ),
   ],
 );
-
-Widget _buildProtectedRoute(BuildContext context, Widget child) {
-  final authService = context.watch<AuthService>();
-  
-  if (authService.loading) {
-    return const Scaffold(
-      body: Center(child: CircularProgressIndicator(color: AppTheme.primary)),
-    );
-  }
-
-  if (authService.user == null) {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.go('/login');
-    });
-    return const Scaffold(body: Center(child: CircularProgressIndicator()));
-  }
-
-  return child;
-}
 
 class JayamMobilesApp extends StatelessWidget {
   const JayamMobilesApp({super.key});
