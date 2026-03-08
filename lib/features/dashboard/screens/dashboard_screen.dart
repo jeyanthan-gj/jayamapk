@@ -194,7 +194,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     if (isAdmin) ...[
                       _buildQuickAction(title: 'Add Model', icon: LucideIcons.package, iconColor: const Color(0xFF0EA5E9), onTap: () => context.go('/smartphones')),
                       _buildQuickAction(title: 'Manage Staff', icon: LucideIcons.users, iconColor: AppTheme.primary, onTap: () => context.go('/staff')),
-                      _buildQuickAction(title: 'Manage Users', icon: LucideIcons.shield, iconColor: const Color(0xFF0EA5E9), onTap: () => context.go('/users')),
                     ],
                   ];
                   return Wrap(

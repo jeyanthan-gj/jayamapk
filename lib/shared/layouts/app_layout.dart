@@ -30,7 +30,6 @@ class AppLayout extends StatelessWidget {
       {'path': '/smartphones', 'label': 'Smartphones', 'icon': LucideIcons.smartphone},
       {'path': '/attendance', 'label': 'Attendance', 'icon': LucideIcons.mapPin},
       if (isAdmin) {'path': '/staff', 'label': 'Staff', 'icon': LucideIcons.users},
-      if (isAdmin) {'path': '/users', 'label': 'Users', 'icon': LucideIcons.shieldCheck},
       {'path': '/profile', 'label': 'My Profile', 'icon': LucideIcons.user},
     ];
 

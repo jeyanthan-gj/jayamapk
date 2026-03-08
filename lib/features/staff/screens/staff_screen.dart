@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:lucide_icons/lucide_icons.dart';
+import 'package:intl/intl.dart';
 
 import '../../../core/auth/auth_service.dart';
 import '../../../core/theme/app_theme.dart';
@@ -96,6 +97,32 @@ class _StaffScreenState extends State<StaffScreen> {
     );
   }
 
+  Future<void> _selectSalaryDate(BuildContext context) async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now(),
+      firstDate: DateTime(2000),
+      lastDate: DateTime(2101),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: ColorScheme.light(
+              primary: AppTheme.primary,
+              onPrimary: Colors.white,
+              onSurface: Theme.of(context).colorScheme.onSurface,
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+    if (picked != null) {
+      setState(() {
+        _salaryDateController.text = DateFormat('yyyy-MM-dd').format(picked);
+      });
+    }
+  }
+
   Future<void> _handleSave(BuildContext dialogCtx) async {
     if (!_formKey.currentState!.validate()) return;
     
@@ -142,7 +169,7 @@ class _StaffScreenState extends State<StaffScreen> {
     }
   }
 
-  Future<void> _handleDelete(int id, String mobile) async {
+  Future<void> _handleDelete(dynamic id, String mobile) async {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -204,7 +231,14 @@ class _StaffScreenState extends State<StaffScreen> {
                    Expanded(
                      child: TextFormField(
                         controller: _salaryDateController,
-                        decoration: const InputDecoration(labelText: 'Salary Date', border: OutlineInputBorder(), hintText: 'YYYY-MM-DD'),
+                        readOnly: true,
+                        onTap: () => _selectSalaryDate(dialogCtx),
+                        decoration: const InputDecoration(
+                          labelText: 'Salary Date',
+                          border: OutlineInputBorder(),
+                          hintText: 'Select Date',
+                          suffixIcon: Icon(LucideIcons.calendar, size: 18),
+                        ),
                       ),
                    )
                 ],

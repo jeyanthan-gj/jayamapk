@@ -82,10 +82,6 @@ final _router = GoRouter(
           builder: (context, state) => const StaffScreen(),
         ),
         GoRoute(
-          path: '/users',
-          builder: (context, state) => const UserManagementScreen(),
-        ),
-        GoRoute(
           path: '/profile',
           builder: (context, state) => const ProfileScreen(),
         ),
