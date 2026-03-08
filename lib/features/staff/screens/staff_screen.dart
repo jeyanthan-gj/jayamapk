@@ -92,14 +92,14 @@ class _StaffScreenState extends State<StaffScreen> {
 
     showDialog(
       context: context,
-      builder: (context) => _buildDialog(),
+      builder: (ctx) => _buildDialog(ctx),
     );
   }
 
-  Future<void> _handleSave() async {
+  Future<void> _handleSave(BuildContext dialogCtx) async {
     if (!_formKey.currentState!.validate()) return;
     
-    Navigator.pop(context); // close dialog
+    Navigator.pop(dialogCtx); // close dialog
     setState(() => _loading = true);
 
     try {
@@ -170,7 +170,7 @@ class _StaffScreenState extends State<StaffScreen> {
     }
   }
 
-  Widget _buildDialog() {
+  Widget _buildDialog(BuildContext dialogCtx) {
     return AlertDialog(
       title: Text(_editingStaff != null ? 'Edit Staff Member' : 'Add New Staff', style: const TextStyle(fontWeight: FontWeight.bold)),
       content: SingleChildScrollView(
@@ -214,8 +214,8 @@ class _StaffScreenState extends State<StaffScreen> {
         ),
       ),
       actions: [
-        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
-        ElevatedButton(onPressed: _handleSave, child: const Text('Save')),
+        TextButton(onPressed: () => Navigator.pop(dialogCtx), child: const Text('Cancel')),
+        ElevatedButton(onPressed: () => _handleSave(dialogCtx), child: const Text('Save')),
       ],
     );
   }

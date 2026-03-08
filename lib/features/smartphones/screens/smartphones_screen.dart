@@ -32,13 +32,11 @@ class _SmartphonesScreenState extends State<SmartphonesScreen> {
   bool _showFilters = false;
 
   // Brand dialog
-  bool _brandDialogOpen = false;
   String _newBrandName = '';
   XFile? _brandFile;
   Map<String, dynamic>? _editingBrand;
 
   // Model dialog
-  bool _modelDialogOpen = false;
   Map<String, dynamic>? _editingModel;
   XFile? _modelFile;
   List<Map<String, dynamic>> _variants = [];
@@ -110,12 +108,13 @@ class _SmartphonesScreenState extends State<SmartphonesScreen> {
       _editingBrand = brand;
       _newBrandName = brand?['name'] ?? '';
       _brandFile = null;
-      _brandDialogOpen = true;
     });
+    showDialog(context: context, builder: (ctx) => _buildBrandDialog(ctx));
   }
 
-  Future<void> _handleSaveBrand() async {
+  Future<void> _handleSaveBrand(BuildContext dialogCtx) async {
     if (_newBrandName.trim().isEmpty) return;
+    Navigator.pop(dialogCtx);
     setState(() => _isSaving = true);
     try {
       String? logoUrl = _editingBrand?['logo_url'];
@@ -129,7 +128,6 @@ class _SmartphonesScreenState extends State<SmartphonesScreen> {
         await _supabase.from('brands').insert({'name': _newBrandName.trim(), 'logo_url': logoUrl});
       }
       if (mounted) {
-        setState(() => _brandDialogOpen = false);
         _fetchData();
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Brand saved!'), backgroundColor: Colors.green));
       }
@@ -190,7 +188,6 @@ class _SmartphonesScreenState extends State<SmartphonesScreen> {
         _variants = existingVariants.map((v) => Map<String, dynamic>.from(v)).toList();
         _variantFiles = List.filled(_variants.length, null);
         _modelFile = null;
-        _modelDialogOpen = true;
       });
     } else {
       setState(() {
@@ -203,12 +200,12 @@ class _SmartphonesScreenState extends State<SmartphonesScreen> {
         _variants = [{'ram_rom': '', 'color': '', 'price': 0, 'display': '', 'battery': '', 'processor': '', 'charging_speed': '', 'front_camera': '', 'back_camera': '', 'image_url': null}];
         _variantFiles = [null];
         _modelFile = null;
-        _modelDialogOpen = true;
       });
     }
+    showDialog(context: context, builder: (ctx) => _buildModelDialog(ctx));
   }
 
-  Future<void> _handleSaveModel() async {
+  Future<void> _handleSaveModel(BuildContext dialogCtx) async {
     if (_modelForm['name']!.trim().isEmpty || _modelForm['brand_id']!.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Name and Brand are required'), backgroundColor: Colors.red));
       return;
@@ -272,8 +269,8 @@ class _SmartphonesScreenState extends State<SmartphonesScreen> {
       }
       await _supabase.from('variants').insert(variantsToInsert);
 
+      Navigator.pop(dialogCtx);
       if (mounted) {
-        setState(() => _modelDialogOpen = false);
         _fetchData();
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(_editingModel != null ? 'Model updated!' : 'Model added!'), backgroundColor: Colors.green));
       }
@@ -365,7 +362,7 @@ class _SmartphonesScreenState extends State<SmartphonesScreen> {
   );
 
   // ── Brand Dialog ──────────────────────────────────────────────────────────
-  Widget _buildBrandDialog() {
+  Widget _buildBrandDialog(BuildContext dialogCtx) {
     return StatefulBuilder(builder: (ctx, setSt) => AlertDialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
       title: Text(_editingBrand != null ? 'Edit Brand' : 'Add Brand', style: const TextStyle(fontWeight: FontWeight.w900)),
@@ -396,10 +393,10 @@ class _SmartphonesScreenState extends State<SmartphonesScreen> {
         if (_brandFile != null) Container(margin: const EdgeInsets.only(top: 8), padding: const EdgeInsets.all(8), decoration: BoxDecoration(color: Colors.green.withOpacity(0.1), borderRadius: BorderRadius.circular(8)), child: Row(children: [const Icon(LucideIcons.checkCircle2, size: 14, color: Colors.green), const SizedBox(width: 6), Expanded(child: Text(_brandFile!.name, style: const TextStyle(fontSize: 11, color: Colors.green, fontWeight: FontWeight.bold), overflow: TextOverflow.ellipsis))])),
       ])),
       actions: [
-        TextButton(onPressed: () => setState(() => _brandDialogOpen = false), child: const Text('Cancel')),
+        TextButton(onPressed: () => Navigator.pop(dialogCtx), child: const Text('Cancel')),
         ElevatedButton(
           style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primary, foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
-          onPressed: _isSaving ? null : () async { setState(() => _brandDialogOpen = false); await _handleSaveBrand(); },
+          onPressed: _isSaving ? null : () async { await _handleSaveBrand(dialogCtx); },
           child: _isSaving ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)) : const Text('Save Brand', style: TextStyle(fontWeight: FontWeight.w900)),
         ),
       ],
@@ -407,7 +404,7 @@ class _SmartphonesScreenState extends State<SmartphonesScreen> {
   }
 
   // ── Model Dialog ──────────────────────────────────────────────────────────
-  Widget _buildModelDialog() {
+  Widget _buildModelDialog(BuildContext dialogCtx) {
     return StatefulBuilder(builder: (ctx, setSt) {
       void setField(String key, String val) => setSt(() => _modelForm[key] = val);
       void setVariant(int i, String key, dynamic val) => setSt(() { final n = List<Map<String, dynamic>>.from(_variants); n[i][key] = val; _variants = n; });
@@ -426,7 +423,7 @@ class _SmartphonesScreenState extends State<SmartphonesScreen> {
               ),
               child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
                 Text(_editingModel != null ? 'Update Model' : 'Create New Model', style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900)),
-                IconButton(icon: const Icon(LucideIcons.x), onPressed: () => setState(() => _modelDialogOpen = false)),
+                IconButton(icon: const Icon(LucideIcons.x), onPressed: () => Navigator.pop(dialogCtx)),
               ]),
             ),
             // Content
@@ -554,11 +551,11 @@ class _SmartphonesScreenState extends State<SmartphonesScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
               decoration: BoxDecoration(border: Border(top: BorderSide(color: Theme.of(context).dividerColor))),
               child: Row(mainAxisAlignment: MainAxisAlignment.end, children: [
-                TextButton(onPressed: () => setState(() => _modelDialogOpen = false), child: const Text('Cancel')),
+                TextButton(onPressed: () => Navigator.pop(dialogCtx), child: const Text('Cancel')),
                 const SizedBox(width: 12),
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primary, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 14), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))),
-                  onPressed: _isSaving ? null : () async { setState(() => _modelDialogOpen = false); await _handleSaveModel(); },
+                  onPressed: _isSaving ? null : () async { await _handleSaveModel(dialogCtx); },
                   child: _isSaving
                     ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
                     : const Text('Finalize & Save', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16)),
@@ -636,178 +633,159 @@ class _SmartphonesScreenState extends State<SmartphonesScreen> {
     final isAdmin = context.watch<AuthService>().isAdmin;
     final filtered = _filteredModels;
 
-    return Stack(children: [
-      SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          // Header
-          Wrap(spacing: 12, runSpacing: 12, alignment: WrapAlignment.spaceBetween, crossAxisAlignment: WrapCrossAlignment.center, children: [
-            Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text('Smartphones', style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.w900)),
-              Text('${filtered.length} models available', style: const TextStyle(color: Colors.grey, fontWeight: FontWeight.bold)),
-            ]),
-            if (isAdmin)
-              Wrap(spacing: 8, children: [
-                OutlinedButton.icon(
-                  icon: const Icon(LucideIcons.plus, size: 14),
-                  label: const Text('Brand'),
-                  style: OutlinedButton.styleFrom(side: const BorderSide(color: AppTheme.primary), foregroundColor: AppTheme.primary, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
-                  onPressed: () => setState(() { _openBrandDialog(); }),
-                ),
-                ElevatedButton.icon(
-                  icon: const Icon(LucideIcons.plus, size: 14),
-                  label: const Text('Add Model'),
-                  style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primary, foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
-                  onPressed: () => setState(() { _openModelDialog(); }),
-                ),
-              ]),
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(24),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        // Header
+        Wrap(spacing: 12, runSpacing: 12, alignment: WrapAlignment.spaceBetween, crossAxisAlignment: WrapCrossAlignment.center, children: [
+          Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text('Smartphones', style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.w900)),
+            Text('${filtered.length} models available', style: const TextStyle(color: Colors.grey, fontWeight: FontWeight.bold)),
           ]),
-          const SizedBox(height: 24),
-
-          // Search + Filter toggle
-          Row(children: [
-            Expanded(child: TextField(
-              onChanged: (v) => setState(() => _search = v),
-              decoration: InputDecoration(
-                hintText: 'Search models by name...',
-                prefixIcon: const Icon(LucideIcons.search, size: 18),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
-                contentPadding: const EdgeInsets.symmetric(vertical: 0),
+          if (isAdmin)
+            Wrap(spacing: 8, children: [
+              OutlinedButton.icon(
+                icon: const Icon(LucideIcons.plus, size: 14),
+                label: const Text('Brand'),
+                style: OutlinedButton.styleFrom(side: const BorderSide(color: AppTheme.primary), foregroundColor: AppTheme.primary, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+                onPressed: () => _openBrandDialog(),
               ),
-            )),
-            const SizedBox(width: 12),
-            Container(
-              decoration: BoxDecoration(color: _showFilters ? AppTheme.primary : Theme.of(context).colorScheme.surface, borderRadius: BorderRadius.circular(16), border: Border.all(color: _showFilters ? AppTheme.primary : Theme.of(context).dividerColor)),
-              child: IconButton(icon: Icon(LucideIcons.filter, color: _showFilters ? Colors.white : null), onPressed: () => setState(() => _showFilters = !_showFilters)),
-            ),
-          ]),
-
-          // Filters Panel
-          if (_showFilters) ...[
-            const SizedBox(height: 16),
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(color: Theme.of(context).colorScheme.surface, borderRadius: BorderRadius.circular(20), border: Border.all(color: AppTheme.primary.withOpacity(0.15))),
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Wrap(spacing: 16, runSpacing: 16, children: [
-                  SizedBox(width: 180, child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    _labelText('FILTER BY BRAND'),
-                    DropdownButtonFormField<String>(
-                      value: _brandFilter,
-                      decoration: _inputDec(''),
-                      borderRadius: BorderRadius.circular(12),
-                      items: [const DropdownMenuItem(value: 'all', child: Text('All Brands')), ..._brands.map((b) => DropdownMenuItem(value: b['id'].toString(), child: Text(b['name'] ?? '')))],
-                      onChanged: (v) => setState(() => _brandFilter = v ?? 'all'),
-                    ),
-                  ])),
-                  SizedBox(width: 160, child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    _labelText('MEMORY (RAM/ROM)'),
-                    TextField(controller: TextEditingController(text: _ramFilter), decoration: _inputDec('', hint: 'e.g. 8GB'), onChanged: (v) => setState(() => _ramFilter = v)),
-                  ])),
-                  SizedBox(width: 160, child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    _labelText('PROCESSOR / CPU'),
-                    TextField(controller: TextEditingController(text: _processorFilter), decoration: _inputDec('', hint: 'e.g. Snapdragon'), onChanged: (v) => setState(() => _processorFilter = v)),
-                  ])),
-                  SizedBox(width: 160, child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    _labelText('SORT ORDER'),
-                    DropdownButtonFormField<String>(
-                      value: _sortOrder,
-                      decoration: _inputDec(''),
-                      borderRadius: BorderRadius.circular(12),
-                      items: const [DropdownMenuItem(value: 'newest', child: Text('Newest First')), DropdownMenuItem(value: 'price-asc', child: Text('Price: Low→High')), DropdownMenuItem(value: 'price-desc', child: Text('Price: High→Low')), DropdownMenuItem(value: 'name-asc', child: Text('Name A–Z'))],
-                      onChanged: (v) => setState(() => _sortOrder = v ?? 'newest'),
-                    ),
-                  ])),
-                ]),
-                const Divider(height: 24),
-                Wrap(spacing: 16, runSpacing: 12, crossAxisAlignment: WrapCrossAlignment.end, children: [
-                  SizedBox(width: 120, child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_labelText('MIN PRICE'), TextField(controller: TextEditingController(text: _priceMin), decoration: _inputDec('', hint: '0'), keyboardType: TextInputType.number, onChanged: (v) => setState(() => _priceMin = v))])),
-                  SizedBox(width: 120, child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_labelText('MAX PRICE'), TextField(controller: TextEditingController(text: _priceMax), decoration: _inputDec('', hint: 'Any'), keyboardType: TextInputType.number, onChanged: (v) => setState(() => _priceMax = v))])),
-                  TextButton.icon(
-                    icon: const Icon(LucideIcons.x, size: 14),
-                    label: const Text('Reset All Filters'),
-                    onPressed: () => setState(() { _brandFilter = 'all'; _priceMin = ''; _priceMax = ''; _ramFilter = ''; _processorFilter = ''; _sortOrder = 'newest'; }),
-                  ),
-                ]),
-              ]),
-            ),
-          ],
-
-          // Brands section
-          if (_brands.isNotEmpty) ...[
-            const SizedBox(height: 28),
-            Row(children: [const SizedBox(width: 32, height: 1, child: Divider()), const SizedBox(width: 8), const Text('FEATURED BRANDS', style: TextStyle(fontSize: 9, fontWeight: FontWeight.w900, color: Colors.grey, letterSpacing: 2))]),
-            const SizedBox(height: 12),
-            SingleChildScrollView(scrollDirection: Axis.horizontal, child: Row(children: _brands.map((brand) {
-              final isSelected = _brandFilter == brand['id'].toString();
-              return GestureDetector(
-                onTap: () => setState(() => _brandFilter = isSelected ? 'all' : brand['id'].toString()),
-                child: Container(
-                  margin: const EdgeInsets.only(right: 12),
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.surface,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: isSelected ? AppTheme.primary : Theme.of(context).dividerColor, width: isSelected ? 2 : 1),
-                    boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 6)],
-                  ),
-                  child: Row(mainAxisSize: MainAxisSize.min, children: [
-                    if (brand['logo_url'] != null)
-                      Padding(padding: const EdgeInsets.only(right: 10), child: Image.network(brand['logo_url'], width: 28, height: 28, fit: BoxFit.contain, errorBuilder: (_,__,___) => const Icon(LucideIcons.image, size: 20)))
-                    else
-                      const Padding(padding: EdgeInsets.only(right: 8), child: Icon(LucideIcons.image, size: 20)),
-                    Text(brand['name'] ?? '', style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13)),
-                    if (isAdmin) ...[
-                      const SizedBox(width: 8),
-                      GestureDetector(
-                        behavior: HitTestBehavior.opaque,
-                        onTap: () { setState(() {}); _openBrandDialog(brand); },
-                        child: const Icon(LucideIcons.edit, size: 12, color: AppTheme.primary),
-                      ),
-                      const SizedBox(width: 4),
-                      GestureDetector(
-                        behavior: HitTestBehavior.opaque,
-                        onTap: () => _handleDeleteBrand(brand),
-                        child: const Icon(LucideIcons.trash2, size: 12, color: Colors.red),
-                      ),
-                    ],
-                  ]),
-                ),
-              );
-            }).toList())),
-          ],
-
-          // Models grid
-          const SizedBox(height: 28),
-          if (filtered.isEmpty)
-            Center(child: Container(padding: const EdgeInsets.all(48), child: Column(children: [const Icon(LucideIcons.smartphone, size: 48, color: Colors.grey), const SizedBox(height: 16), Text('No models found', style: TextStyle(color: Colors.grey[500], fontWeight: FontWeight.bold))])))
-          else
-            LayoutBuilder(builder: (_, c) {
-              final cols = c.maxWidth > 900 ? 4 : c.maxWidth > 600 ? 2 : 1;
-              final sp = 20.0;
-              final cardW = (c.maxWidth - sp * (cols - 1)) / cols;
-              return Wrap(spacing: sp, runSpacing: sp, children: filtered.map((m) => SizedBox(width: cardW, child: _buildModelCard(m, isAdmin))).toList());
-            }),
-          const SizedBox(height: 40),
+              ElevatedButton.icon(
+                icon: const Icon(LucideIcons.plus, size: 14),
+                label: const Text('Add Model'),
+                style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primary, foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+                onPressed: () => _openModelDialog(),
+              ),
+            ]),
         ]),
-      ),
+        const SizedBox(height: 24),
 
-      // Dialogs shown as overlays
-      if (_brandDialogOpen) _BrandDialogOverlay(child: _buildBrandDialog()),
-      if (_modelDialogOpen) _BrandDialogOverlay(child: _buildModelDialog()),
-    ]);
-  }
-}
+        // Search + Filter toggle
+        Row(children: [
+          Expanded(child: TextField(
+            onChanged: (v) => setState(() => _search = v),
+            decoration: InputDecoration(
+              hintText: 'Search models by name...',
+              prefixIcon: const Icon(LucideIcons.search, size: 18),
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
+              contentPadding: const EdgeInsets.symmetric(vertical: 0),
+            ),
+          )),
+          const SizedBox(width: 12),
+          Container(
+            decoration: BoxDecoration(color: _showFilters ? AppTheme.primary : Theme.of(context).colorScheme.surface, borderRadius: BorderRadius.circular(16), border: Border.all(color: _showFilters ? AppTheme.primary : Theme.of(context).dividerColor)),
+            child: IconButton(icon: Icon(LucideIcons.filter, color: _showFilters ? Colors.white : null), onPressed: () => setState(() => _showFilters = !_showFilters)),
+          ),
+        ]),
 
-// Simple overlay wrapper so dialogs can ref parent state
-class _BrandDialogOverlay extends StatelessWidget {
-  final Widget child;
-  const _BrandDialogOverlay({required this.child});
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: Colors.black54,
-      child: Center(child: child),
+        // Filters Panel
+        if (_showFilters) ...[
+          const SizedBox(height: 16),
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(color: Theme.of(context).colorScheme.surface, borderRadius: BorderRadius.circular(20), border: Border.all(color: AppTheme.primary.withOpacity(0.15))),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Wrap(spacing: 16, runSpacing: 16, children: [
+                SizedBox(width: 180, child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  _labelText('FILTER BY BRAND'),
+                  DropdownButtonFormField<String>(
+                    value: _brandFilter,
+                    decoration: _inputDec(''),
+                    borderRadius: BorderRadius.circular(12),
+                    items: [const DropdownMenuItem(value: 'all', child: Text('All Brands')), ..._brands.map((b) => DropdownMenuItem(value: b['id'].toString(), child: Text(b['name'] ?? '')))],
+                    onChanged: (v) => setState(() => _brandFilter = v ?? 'all'),
+                  ),
+                ])),
+                SizedBox(width: 160, child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  _labelText('MEMORY (RAM/ROM)'),
+                  TextField(controller: TextEditingController(text: _ramFilter), decoration: _inputDec('', hint: 'e.g. 8GB'), onChanged: (v) => setState(() => _ramFilter = v)),
+                ])),
+                SizedBox(width: 160, child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  _labelText('PROCESSOR / CPU'),
+                  TextField(controller: TextEditingController(text: _processorFilter), decoration: _inputDec('', hint: 'e.g. Snapdragon'), onChanged: (v) => setState(() => _processorFilter = v)),
+                ])),
+                SizedBox(width: 160, child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  _labelText('SORT ORDER'),
+                  DropdownButtonFormField<String>(
+                    value: _sortOrder,
+                    decoration: _inputDec(''),
+                    borderRadius: BorderRadius.circular(12),
+                    items: const [DropdownMenuItem(value: 'newest', child: Text('Newest First')), DropdownMenuItem(value: 'price-asc', child: Text('Price: Low→High')), DropdownMenuItem(value: 'price-desc', child: Text('Price: High→Low')), DropdownMenuItem(value: 'name-asc', child: Text('Name A–Z'))],
+                    onChanged: (v) => setState(() => _sortOrder = v ?? 'newest'),
+                  ),
+                ])),
+              ]),
+              const Divider(height: 24),
+              Wrap(spacing: 16, runSpacing: 12, crossAxisAlignment: WrapCrossAlignment.end, children: [
+                SizedBox(width: 120, child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_labelText('MIN PRICE'), TextField(controller: TextEditingController(text: _priceMin), decoration: _inputDec('', hint: '0'), keyboardType: TextInputType.number, onChanged: (v) => setState(() => _priceMin = v))])),
+                SizedBox(width: 120, child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_labelText('MAX PRICE'), TextField(controller: TextEditingController(text: _priceMax), decoration: _inputDec('', hint: 'Any'), keyboardType: TextInputType.number, onChanged: (v) => setState(() => _priceMax = v))])),
+                TextButton.icon(
+                  icon: const Icon(LucideIcons.x, size: 14),
+                  label: const Text('Reset All Filters'),
+                  onPressed: () => setState(() { _brandFilter = 'all'; _priceMin = ''; _priceMax = ''; _ramFilter = ''; _processorFilter = ''; _sortOrder = 'newest'; }),
+                ),
+              ]),
+            ]),
+          ),
+        ],
+
+        // Brands section
+        if (_brands.isNotEmpty) ...[
+          const SizedBox(height: 28),
+          Row(children: [const SizedBox(width: 32, height: 1, child: Divider()), const SizedBox(width: 8), const Text('FEATURED BRANDS', style: TextStyle(fontSize: 9, fontWeight: FontWeight.w900, color: Colors.grey, letterSpacing: 2))]),
+          const SizedBox(height: 12),
+          SingleChildScrollView(scrollDirection: Axis.horizontal, child: Row(children: _brands.map((brand) {
+            final isSelected = _brandFilter == brand['id'].toString();
+            return GestureDetector(
+              onTap: () => setState(() => _brandFilter = isSelected ? 'all' : brand['id'].toString()),
+              child: Container(
+                margin: const EdgeInsets.only(right: 12),
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.surface,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: isSelected ? AppTheme.primary : Theme.of(context).dividerColor, width: isSelected ? 2 : 1),
+                  boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 6)],
+                ),
+                child: Row(mainAxisSize: MainAxisSize.min, children: [
+                  if (brand['logo_url'] != null)
+                    Padding(padding: const EdgeInsets.only(right: 10), child: Image.network(brand['logo_url'], width: 28, height: 28, fit: BoxFit.contain, errorBuilder: (_,__,___) => const Icon(LucideIcons.image, size: 20)))
+                  else
+                    const Padding(padding: EdgeInsets.only(right: 8), child: Icon(LucideIcons.image, size: 20)),
+                  Text(brand['name'] ?? '', style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13)),
+                  if (isAdmin) ...[
+                    const SizedBox(width: 8),
+                    GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTap: () { _openBrandDialog(brand); },
+                      child: const Icon(LucideIcons.edit, size: 12, color: AppTheme.primary),
+                    ),
+                    const SizedBox(width: 4),
+                    GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTap: () => _handleDeleteBrand(brand),
+                      child: const Icon(LucideIcons.trash2, size: 12, color: Colors.red),
+                    ),
+                  ],
+                ]),
+              ),
+            );
+          }).toList())),
+        ],
+
+        // Models grid
+        const SizedBox(height: 28),
+        if (filtered.isEmpty)
+          Center(child: Container(padding: const EdgeInsets.all(48), child: Column(children: [const Icon(LucideIcons.smartphone, size: 48, color: Colors.grey), const SizedBox(height: 16), Text('No models found', style: TextStyle(color: Colors.grey[500], fontWeight: FontWeight.bold))])))
+        else
+          LayoutBuilder(builder: (_, c) {
+            final cols = c.maxWidth > 900 ? 4 : c.maxWidth > 600 ? 2 : 1;
+            final sp = 20.0;
+            final cardW = (c.maxWidth - sp * (cols - 1)) / cols;
+            return Wrap(spacing: sp, runSpacing: sp, children: filtered.map((m) => SizedBox(width: cardW, child: _buildModelCard(m, isAdmin))).toList());
+          }),
+        const SizedBox(height: 40),
+      ]),
     );
   }
 }

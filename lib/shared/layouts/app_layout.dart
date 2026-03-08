@@ -147,10 +147,7 @@ class AppLayout extends StatelessWidget {
                   const SizedBox(width: 12),
                   // Logout
                   GestureDetector(
-                    onTap: () {
-                      authService.signOut();
-                      context.go('/login');
-                    },
+                    onTap: () => _showLogoutConfirmation(context, authService),
                     child: const Icon(LucideIcons.logOut, size: 18, color: Color(0xFF94A3B8)),
                   ),
                 ],
@@ -194,10 +191,7 @@ class AppLayout extends StatelessWidget {
                             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                           ),
-                          onPressed: () {
-                            authService.signOut();
-                            context.go('/login');
-                          },
+                          onPressed: () => _showLogoutConfirmation(context, authService),
                         ),
                         const SizedBox(width: 12),
                         // Theme toggle
@@ -245,10 +239,7 @@ class AppLayout extends StatelessWidget {
             ),
             IconButton(
               icon: const Icon(LucideIcons.logOut, color: AppTheme.primary),
-              onPressed: () {
-                authService.signOut();
-                context.go('/login');
-              },
+              onPressed: () => _showLogoutConfirmation(context, authService),
             ),
           ],
         ),
@@ -312,8 +303,28 @@ class AppLayout extends StatelessWidget {
             ),
           ),
         ),
-        body: child,
       );
     }
+  }
+
+  void _showLogoutConfirmation(BuildContext context, AuthService authService) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Logout?', style: TextStyle(fontWeight: FontWeight.bold)),
+        content: const Text('Are you sure you want to sign out?'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              authService.signOut();
+              context.go('/login');
+            },
+            child: const Text('Logout', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
   }
 }
